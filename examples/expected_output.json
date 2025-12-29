@@ -1,0 +1,183 @@
+{
+  "document_id": "DOC-12345",
+  "email_subject": "Contract Documents - Q4 2024 Agreement",
+  "fields": {
+    "company_name": {
+      "name": "company_name",
+      "value": "Acme Corporation",
+      "confidence": 0.95,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-001",
+        "page": null,
+        "line_numbers": [12],
+        "confidence": 0.95,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "tax_id": {
+      "name": "tax_id",
+      "value": "12-3456789",
+      "confidence": 0.98,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-001",
+        "page": null,
+        "line_numbers": [13],
+        "confidence": 0.98,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "company_address": {
+      "name": "company_address",
+      "value": "123 Main Street, New York, NY 10001",
+      "confidence": 0.92,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-001",
+        "page": null,
+        "line_numbers": [14],
+        "confidence": 0.92,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "contract_number": {
+      "name": "contract_number",
+      "value": "CTR-2024-0042",
+      "confidence": 0.97,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-002",
+        "page": null,
+        "line_numbers": [21],
+        "confidence": 0.97,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "contract_value": {
+      "name": "contract_value",
+      "value": 500000,
+      "confidence": 0.96,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-002",
+        "page": null,
+        "line_numbers": [22],
+        "confidence": 0.96,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "annual_revenue": {
+      "name": "annual_revenue",
+      "value": 15250000,
+      "confidence": 0.94,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-003",
+        "page": null,
+        "line_numbers": [27],
+        "confidence": 0.94,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "primary_contact_name": {
+      "name": "primary_contact_name",
+      "value": "Sarah Johnson",
+      "confidence": 0.93,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-004",
+        "page": null,
+        "line_numbers": [33],
+        "confidence": 0.93,
+        "extraction_pass": "initial",
+        "timestamp": "2024-01-15T19:30:00Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    },
+    "ceo_name": {
+      "name": "ceo_name",
+      "value": "Michael Chen",
+      "confidence": 0.88,
+      "citation": {
+        "source": "email_body",
+        "attachment_name": null,
+        "chunk_id": "chunk-005",
+        "page": null,
+        "line_numbers": [38],
+        "confidence": 0.88,
+        "extraction_pass": "retry",
+        "timestamp": "2024-01-15T19:30:15Z"
+      },
+      "validated": true,
+      "validation_errors": []
+    }
+  },
+  "metrics": {
+    "total_fields": 50,
+    "extracted_fields": 35,
+    "fill_rate": 0.70,
+    "avg_confidence": 0.89,
+    "retry_lift": 0.08,
+    "total_chunks": 12,
+    "chunks_scanned": 180,
+    "processing_time_seconds": 24.5,
+    "agent_times": {
+      "company_info": 5.2,
+      "financial": 4.8,
+      "contract": 5.1,
+      "compliance": 4.9,
+      "personnel": 4.5
+    },
+    "errors_count": 2
+  },
+  "errors": [
+    {
+      "error_type": "ParseError",
+      "error_message": "Failed to parse image attachment: corrupt file",
+      "component": "parse_documents",
+      "timestamp": "2024-01-15T19:30:05Z",
+      "recoverable": true,
+      "context": {
+        "attachment": "insurance_cert.png"
+      }
+    },
+    {
+      "error_type": "ExtractionTimeout",
+      "error_message": "Field extraction timed out after 30s",
+      "component": "parallel_extract",
+      "timestamp": "2024-01-15T19:30:12Z",
+      "recoverable": true,
+      "context": {
+        "field": "pending_litigation"
+      }
+    }
+  ],
+  "timestamp": "2024-01-15T19:30:25Z"
+}

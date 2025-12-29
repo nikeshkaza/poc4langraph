@@ -1,0 +1,66 @@
+# Email Extraction System Configuration
+
+system_name: "email-extraction-system"
+version: "1.0.0"
+
+# LLM Configuration
+llm:
+  provider: "openai"  # openai, anthropic, azure
+  api_key: null  # Set via environment variable
+  endpoint: null  # Optional: custom endpoint
+  model: "gpt-4-turbo-preview"
+  temperature: 0.0
+  max_tokens: 2000
+  timeout: 30
+  max_retries: 3
+
+# Document Parser Configuration
+parser:
+  endpoint: "https://api.example.com/parse"  # Replace with actual endpoint
+  api_key: null  # Set via environment variable
+  timeout: 60
+  max_retries: 3
+  supported_types:
+    - pdf
+    - docx
+    - doc
+    - png
+    - jpg
+    - jpeg
+
+# Chunking Configuration
+chunking:
+  chunk_size: 1000  # characters
+  chunk_overlap: 200
+  min_chunk_size: 100
+  separator: "\n\n"
+  preserve_line_numbers: true
+
+# Retry Configuration
+retry:
+  max_retries: 2
+  retry_missing_only: true
+  relaxed_confidence_threshold: 0.5
+  use_synonyms: true
+  expand_context: true
+
+# Field Metadata
+field_metadata_path: "config/field_definitions.yaml"
+
+# Agent Configuration
+parallel_agents: 5
+agent_timeout: 300  # seconds
+
+# Confidence Thresholds
+min_confidence: 0.7
+high_confidence: 0.9
+
+# Logging
+log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+log_to_file: true
+log_path: "logs/extraction.log"
+
+# Feature Flags
+enable_caching: true
+enable_metrics: true
+enable_validation: true

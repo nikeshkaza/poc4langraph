@@ -1,0 +1,40 @@
+# Core dependencies
+langgraph>=0.0.40
+langchain>=0.1.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Async & HTTP
+aiohttp>=3.9.0
+asyncio>=3.4.3
+tenacity>=8.2.0
+
+# Email parsing
+extract-msg>=0.45.0
+
+# Document processing (replace with your actual parser)
+# PyMuPDF>=1.23.0  # For PDF
+# python-docx>=1.0.0  # For DOCX
+# Pillow>=10.0.0  # For images
+
+# LLM providers (choose based on your provider)
+openai>=1.10.0  # For OpenAI
+# anthropic>=0.18.0  # For Anthropic
+# azure-ai-openai>=1.0.0  # For Azure OpenAI
+
+# Utilities
+python-dateutil>=2.8.0
+uuid>=1.30
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Logging & Monitoring
+structlog>=23.1.0
+
+# Optional: Vector embeddings for semantic search
+# sentence-transformers>=2.2.0
+# faiss-cpu>=1.7.4

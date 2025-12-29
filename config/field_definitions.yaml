@@ -1,0 +1,374 @@
+# Field Definitions for Extraction
+# This file defines all 50 fields grouped into 5 categories
+
+fields:
+  # Category 1: Company Information (10 fields)
+  - name: "company_name"
+    description: "Legal name of the company"
+    category: "company_info"
+    field_type: "string"
+    required: true
+    priority: 5
+    examples:
+      - "Acme Corporation"
+      - "TechStart Inc."
+    synonyms:
+      - "organization name"
+      - "business name"
+      - "entity name"
+  
+  - name: "company_address"
+    description: "Primary business address"
+    category: "company_info"
+    field_type: "string"
+    required: true
+    priority: 4
+    examples:
+      - "123 Main St, New York, NY 10001"
+  
+  - name: "tax_id"
+    description: "Federal tax identification number (EIN)"
+    category: "company_info"
+    field_type: "string"
+    required: true
+    priority: 5
+    validation_rules:
+      - rule_type: "regex"
+        value: "^\\d{2}-\\d{7}$"
+        error_message: "Tax ID must be in format XX-XXXXXXX"
+    synonyms:
+      - "EIN"
+      - "employer identification number"
+  
+  - name: "incorporation_date"
+    description: "Date of incorporation"
+    category: "company_info"
+    field_type: "date"
+    required: false
+    priority: 3
+  
+  - name: "state_of_incorporation"
+    description: "State where company is incorporated"
+    category: "company_info"
+    field_type: "string"
+    required: true
+    priority: 4
+  
+  - name: "company_phone"
+    description: "Primary contact phone number"
+    category: "company_info"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "company_email"
+    description: "Primary contact email"
+    category: "company_info"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "website"
+    description: "Company website URL"
+    category: "company_info"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "industry"
+    description: "Primary industry or sector"
+    category: "company_info"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "number_of_employees"
+    description: "Total number of employees"
+    category: "company_info"
+    field_type: "number"
+    required: false
+    priority: 2
+
+  # Category 2: Financial Information (10 fields)
+  - name: "annual_revenue"
+    description: "Total annual revenue"
+    category: "financial"
+    field_type: "number"
+    required: true
+    priority: 5
+  
+  - name: "fiscal_year_end"
+    description: "Fiscal year end date"
+    category: "financial"
+    field_type: "date"
+    required: true
+    priority: 4
+  
+  - name: "total_assets"
+    description: "Total asset value"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 3
+  
+  - name: "total_liabilities"
+    description: "Total liabilities"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 3
+  
+  - name: "net_income"
+    description: "Net income for the period"
+    category: "financial"
+    field_type: "number"
+    required: true
+    priority: 4
+  
+  - name: "operating_expenses"
+    description: "Total operating expenses"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 3
+  
+  - name: "cash_on_hand"
+    description: "Current cash and cash equivalents"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 3
+  
+  - name: "accounts_receivable"
+    description: "Total accounts receivable"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 2
+  
+  - name: "accounts_payable"
+    description: "Total accounts payable"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 2
+  
+  - name: "debt_to_equity_ratio"
+    description: "Debt-to-equity ratio"
+    category: "financial"
+    field_type: "number"
+    required: false
+    priority: 2
+
+  # Category 3: Contract Details (10 fields)
+  - name: "contract_number"
+    description: "Unique contract identifier"
+    category: "contract"
+    field_type: "string"
+    required: true
+    priority: 5
+  
+  - name: "contract_date"
+    description: "Date contract was signed"
+    category: "contract"
+    field_type: "date"
+    required: true
+    priority: 5
+  
+  - name: "effective_date"
+    description: "Date contract becomes effective"
+    category: "contract"
+    field_type: "date"
+    required: true
+    priority: 4
+  
+  - name: "expiration_date"
+    description: "Date contract expires"
+    category: "contract"
+    field_type: "date"
+    required: true
+    priority: 4
+  
+  - name: "contract_value"
+    description: "Total contract value"
+    category: "contract"
+    field_type: "number"
+    required: true
+    priority: 5
+  
+  - name: "payment_terms"
+    description: "Payment terms and schedule"
+    category: "contract"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "renewal_terms"
+    description: "Contract renewal terms"
+    category: "contract"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "termination_clause"
+    description: "Termination conditions"
+    category: "contract"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "governing_law"
+    description: "Jurisdiction and governing law"
+    category: "contract"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "signatory_name"
+    description: "Name of person who signed contract"
+    category: "contract"
+    field_type: "string"
+    required: true
+    priority: 4
+
+  # Category 4: Compliance & Legal (10 fields)
+  - name: "license_number"
+    description: "Business license number"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "insurance_policy_number"
+    description: "Insurance policy number"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "insurance_expiration"
+    description: "Insurance policy expiration date"
+    category: "compliance"
+    field_type: "date"
+    required: false
+    priority: 3
+  
+  - name: "compliance_certifications"
+    description: "List of compliance certifications"
+    category: "compliance"
+    field_type: "list"
+    required: false
+    priority: 2
+  
+  - name: "last_audit_date"
+    description: "Date of last audit"
+    category: "compliance"
+    field_type: "date"
+    required: false
+    priority: 2
+  
+  - name: "audit_firm"
+    description: "Name of auditing firm"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "regulatory_authority"
+    description: "Primary regulatory authority"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 2
+  
+  - name: "pending_litigation"
+    description: "Description of pending legal cases"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "data_privacy_compliance"
+    description: "Data privacy compliance status (GDPR, CCPA, etc.)"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "environmental_compliance"
+    description: "Environmental compliance certifications"
+    category: "compliance"
+    field_type: "string"
+    required: false
+    priority: 2
+
+  # Category 5: Personnel & Operations (10 fields)
+  - name: "ceo_name"
+    description: "Name of Chief Executive Officer"
+    category: "personnel"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "cfo_name"
+    description: "Name of Chief Financial Officer"
+    category: "personnel"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "primary_contact_name"
+    description: "Name of primary contact person"
+    category: "personnel"
+    field_type: "string"
+    required: true
+    priority: 4
+  
+  - name: "primary_contact_title"
+    description: "Title of primary contact"
+    category: "personnel"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "primary_contact_email"
+    description: "Email of primary contact"
+    category: "personnel"
+    field_type: "string"
+    required: true
+    priority: 4
+  
+  - name: "primary_contact_phone"
+    description: "Phone of primary contact"
+    category: "personnel"
+    field_type: "string"
+    required: false
+    priority: 3
+  
+  - name: "office_locations"
+    description: "List of office locations"
+    category: "personnel"
+    field_type: "list"
+    required: false
+    priority: 2
+  
+  - name: "operating_hours"
+    description: "Standard operating hours"
+    category: "personnel"
+    field_type: "string"
+    required: false
+    priority: 1
+  
+  - name: "employee_turnover_rate"
+    description: "Annual employee turnover percentage"
+    category: "personnel"
+    field_type: "number"
+    required: false
+    priority: 2
+  
+  - name: "key_departments"
+    description: "List of key departments"
+    category: "personnel"
+    field_type: "list"
+    required: false
+    priority: 2
