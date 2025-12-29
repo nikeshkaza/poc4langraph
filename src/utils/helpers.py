@@ -55,7 +55,7 @@ def format_extraction_result(state: GraphState) -> ExtractionResult:
     """
     return ExtractionResult(
         document_id=state.document_id,
-        email_subject=state.email_headers.get('subject'),
+        email_subject=state.email_headers.get('subject') if state.email_headers else None,
         fields=state.extracted_fields,
         metrics=state.metrics,
         errors=state.errors,
@@ -74,8 +74,11 @@ def export_result_to_json(result: ExtractionResult, output_path: str) -> None:
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
+    # Use model_dump for Pydantic v2, dict for v1
+    data = result.model_dump() if hasattr(result, 'model_dump') else result.dict()
+    
     with open(output_file, 'w') as f:
-        json.dump(result.dict(), f, indent=2, default=str)
+        json.dump(data, f, indent=2, default=str)
     
     logging.info(f"Result exported to {output_path}")
 

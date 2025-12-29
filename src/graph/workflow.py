@@ -343,10 +343,13 @@ class ExtractionWorkflow:
                 processing_time = delta.total_seconds()
             
             # Agent times
-            agent_times = {
-                cat: agent.get_processing_time()
-                for cat, agent in state.agent_states.items()
-            }
+            agent_times = {}
+            for cat, agent_state in state.agent_states.items():
+                if agent_state.start_time and agent_state.end_time:
+                    delta = agent_state.end_time - agent_state.start_time
+                    agent_times[cat] = delta.total_seconds()
+                else:
+                    agent_times[cat] = 0.0
             
             # Retry lift
             initial_extracted = extracted_count

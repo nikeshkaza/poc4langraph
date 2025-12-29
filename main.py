@@ -81,7 +81,7 @@ async def extract_from_email(
     # Print summary
     print_extraction_summary(result)
     
-    return result.dict()
+    return result.model_dump() if hasattr(result, 'model_dump') else result.dict()
 
 
 async def main():
