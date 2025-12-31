@@ -1,6 +1,7 @@
 """
 Document parser adapter - interfaces with external parsing API.
 Handles PDF, DOCX, images with OCR, etc.
+Uses PyMuPDF for PDFs and Azure Document Intelligence for other formats.
 """
 
 import asyncio
@@ -14,6 +15,26 @@ from tenacity import (
     wait_exponential,
     retry_if_exception_type
 )
+import os
+
+# PDF parsing
+try:
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
+except ImportError:
+    PYMUPDF_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("PyMuPDF not installed. PDF parsing will be limited.")
+
+# Azure Document Intelligence
+try:
+    from azure.ai.formrecognizer import DocumentAnalysisClient
+    from azure.core.credentials import AzureKeyCredential
+    AZURE_AVAILABLE = True
+except ImportError:
+    AZURE_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("Azure SDK not installed. Azure Document Intelligence will not be available.")
 
 from src.models.schemas import ParsedContent, SourceType, AttachmentType
 from src.models.config import ParserConfig
@@ -26,6 +47,16 @@ class DocumentParserError(Exception):
     pass
 
 
+class PDFParsingError(DocumentParserError):
+    """Error parsing PDF document."""
+    pass
+
+
+class AzureParsingError(DocumentParserError):
+    """Error with Azure Document Intelligence."""
+    pass
+
+
 class DocumentParser:
     """
     Adapter for external document parsing API.
@@ -35,6 +66,28 @@ class DocumentParser:
     def __init__(self, config: ParserConfig):
         self.config = config
         self.session: Optional[aiohttp.ClientSession] = None
+        
+        # Initialize Azure Document Intelligence client if available
+        self.azure_client = None
+        if AZURE_AVAILABLE:
+            azure_endpoint = os.getenv('AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT')
+            azure_key = os.getenv('AZURE_DOCUMENT_INTELLIGENCE_KEY')
+            
+            if azure_endpoint and azure_key:
+                try:
+                    self.azure_client = DocumentAnalysisClient(
+                        endpoint=azure_endpoint,
+                        credential=AzureKeyCredential(azure_key)
+                    )
+                    logger.info("Azure Document Intelligence client initialized")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize Azure client: {e}")
+            else:
+                logger.info("Azure credentials not found in environment. Set AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT and AZURE_DOCUMENT_INTELLIGENCE_KEY")
+        
+        # Check PyMuPDF availability
+        if not PYMUPDF_AVAILABLE:
+            logger.warning("PyMuPDF not available. Install with: pip install PyMuPDF")
     
     async def __aenter__(self):
         """Async context manager entry."""
@@ -102,96 +155,205 @@ class DocumentParser:
     ) -> List[ParsedContent]:
         """Parse with automatic retry logic."""
         
-        # Read file
-        with open(attachment_path, 'rb') as f:
-            file_content = f.read()
-        
-        # Prepare request
-        headers = {}
-        if self.config.api_key:
-            headers['Authorization'] = f"Bearer {self.config.api_key}"
-        
-        # Simulate external API call
-        # In production, this would call Azure Form Recognizer, PyMuPDF API, etc.
-        parsed = await self._call_parser_api(
-            file_content,
-            attachment_type,
-            attachment_name,
-            headers
-        )
-        
-        return parsed
-    
-    async def _call_parser_api(
-        self,
-        file_content: bytes,
-        attachment_type: AttachmentType,
-        attachment_name: str,
-        headers: Dict[str, str]
-    ) -> List[ParsedContent]:
-        """
-        Call external parser API.
-        
-        THIS IS A MOCK IMPLEMENTATION - Replace with actual API integration.
-        """
-        
-        # Mock response based on file type
-        logger.info(f"Parsing {attachment_name} ({attachment_type.value})")
-        
-        # Simulate API delay
-        await asyncio.sleep(0.5)
-        
-        # Generate mock parsed content
+        # Route to appropriate parser based on file type
         if attachment_type == AttachmentType.PDF:
-            return self._mock_pdf_parse(attachment_name, file_content)
+            return await self._parse_pdf_pymupdf(attachment_path, attachment_name)
         elif attachment_type in [AttachmentType.DOCX, AttachmentType.DOC]:
-            return self._mock_docx_parse(attachment_name, file_content)
+            return await self._parse_with_azure(attachment_path, attachment_name, 'document')
         elif attachment_type == AttachmentType.IMAGE:
-            return self._mock_ocr_parse(attachment_name, file_content)
+            return await self._parse_with_azure(attachment_path, attachment_name, 'image')
         else:
+            logger.warning(f"Unsupported attachment type: {attachment_type}")
             return []
     
-    def _mock_pdf_parse(self, name: str, content: bytes) -> List[ParsedContent]:
-        """Mock PDF parsing (replace with real API)."""
-        # Simulate multi-page PDF
-        return [
-            ParsedContent(
-                source_type=SourceType.ATTACHMENT,
-                attachment_name=name,
-                page=1,
-                content=f"[Mock PDF content from {name}, page 1]\nThis is sample text extracted from the first page.",
-                line_map=[(1, "This is sample text extracted from the first page.")]
-            ),
-            ParsedContent(
-                source_type=SourceType.ATTACHMENT,
-                attachment_name=name,
-                page=2,
-                content=f"[Mock PDF content from {name}, page 2]\nAdditional content from page 2.",
-                line_map=[(1, "Additional content from page 2.")]
-            )
-        ]
     
-    def _mock_docx_parse(self, name: str, content: bytes) -> List[ParsedContent]:
-        """Mock DOCX parsing (replace with real API)."""
-        return [
-            ParsedContent(
-                source_type=SourceType.ATTACHMENT,
-                attachment_name=name,
-                content=f"[Mock DOCX content from {name}]\nDocument text extracted from Word file.",
-                line_map=[(1, "Document text extracted from Word file.")]
-            )
-        ]
+    async def _parse_pdf_pymupdf(
+        self,
+        pdf_path: str,
+        attachment_name: str
+    ) -> List[ParsedContent]:
+        """
+        Parse PDF using PyMuPDF (fitz).
+        
+        Args:
+            pdf_path: Path to PDF file
+            attachment_name: Name of the attachment
+            
+        Returns:
+            List of ParsedContent, one per page
+        """
+        if not PYMUPDF_AVAILABLE:
+            raise PDFParsingError("PyMuPDF not installed. Install with: pip install PyMuPDF")
+        
+        try:
+            # Open PDF
+            doc = fitz.open(pdf_path)
+            parsed_contents = []
+            
+            logger.info(f"Parsing PDF: {attachment_name} ({doc.page_count} pages)")
+            
+            # Extract text from each page
+            for page_num in range(doc.page_count):
+                page = doc[page_num]
+                
+                # Extract text
+                text = page.get_text("text")
+                
+                # Build line map
+                line_map = []
+                lines = text.split('\n')
+                for line_no, line_text in enumerate(lines, 1):
+                    if line_text.strip():
+                        line_map.append((line_no, line_text))
+                
+                # Create ParsedContent
+                parsed_content = ParsedContent(
+                    source_type=SourceType.ATTACHMENT,
+                    attachment_name=attachment_name,
+                    page=page_num + 1,  # 1-indexed
+                    content=text,
+                    line_map=line_map,
+                    metadata={
+                        'page_count': doc.page_count,
+                        'page_width': page.rect.width,
+                        'page_height': page.rect.height,
+                        'parser': 'pymupdf'
+                    }
+                )
+                parsed_contents.append(parsed_content)
+                
+                logger.debug(f"Extracted {len(text)} characters from page {page_num + 1}")
+            
+            doc.close()
+            
+            logger.info(f"Successfully parsed PDF: {attachment_name} - {doc.page_count} pages, {sum(len(p.content) for p in parsed_contents)} total characters")
+            
+            return parsed_contents
+            
+        except Exception as e:
+            logger.error(f"Failed to parse PDF {attachment_name}: {e}")
+            raise PDFParsingError(f"PyMuPDF parsing failed: {str(e)}")
     
-    def _mock_ocr_parse(self, name: str, content: bytes) -> List[ParsedContent]:
-        """Mock OCR parsing (replace with real API)."""
-        return [
-            ParsedContent(
-                source_type=SourceType.ATTACHMENT,
-                attachment_name=name,
-                content=f"[Mock OCR content from {name}]\nText extracted from image via OCR.",
-                line_map=[(1, "Text extracted from image via OCR.")]
+    async def _parse_with_azure(
+        self,
+        file_path: str,
+        attachment_name: str,
+        doc_type: str = 'document'
+    ) -> List[ParsedContent]:
+        """
+        Parse document using Azure Document Intelligence.
+        
+        Args:
+            file_path: Path to the file
+            attachment_name: Name of the attachment
+            doc_type: Type of document ('document' for DOCX/DOC, 'image' for images)
+            
+        Returns:
+            List of ParsedContent
+        """
+        if not self.azure_client:
+            raise AzureParsingError(
+                "Azure Document Intelligence not initialized. "
+                "Set AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT and AZURE_DOCUMENT_INTELLIGENCE_KEY environment variables"
             )
-        ]
+        
+        try:
+            logger.info(f"Parsing {doc_type} with Azure: {attachment_name}")
+            
+            # Read file
+            with open(file_path, 'rb') as f:
+                file_content = f.read()
+            
+            # Start analysis - using prebuilt-read model for general text extraction
+            poller = self.azure_client.begin_analyze_document(
+                model_id="prebuilt-read",
+                document=file_content
+            )
+            
+            # Wait for completion
+            result = poller.result()
+            
+            parsed_contents = []
+            page_count = len(result.pages)
+            
+            logger.info(f"Azure analysis complete: {page_count} pages detected")
+            
+            # Extract content per page
+            for page_num, page in enumerate(result.pages, 1):
+                # Collect all text from lines on this page
+                page_text = []
+                line_map = []
+                
+                for line in page.lines:
+                    page_text.append(line.content)
+                    line_map.append((len(line_map) + 1, line.content))
+                
+                full_text = '\n'.join(page_text)
+                
+                # Create ParsedContent
+                parsed_content = ParsedContent(
+                    source_type=SourceType.ATTACHMENT,
+                    attachment_name=attachment_name,
+                    page=page_num,
+                    content=full_text,
+                    line_map=line_map,
+                    metadata={
+                        'page_count': page_count,
+                        'page_width': page.width,
+                        'page_height': page.height,
+                        'page_angle': page.angle,
+                        'unit': page.unit,
+                        'parser': 'azure_document_intelligence',
+                        'model_id': 'prebuilt-read'
+                    }
+                )
+                parsed_contents.append(parsed_content)
+                
+                logger.debug(f"Extracted {len(full_text)} characters from page {page_num}")
+            
+            logger.info(f"Successfully parsed with Azure: {attachment_name} - {page_count} pages, {sum(len(p.content) for p in parsed_contents)} total characters")
+            
+            return parsed_contents
+            
+        except Exception as e:
+            logger.error(f"Azure Document Intelligence failed for {attachment_name}: {e}")
+            raise AzureParsingError(f"Azure parsing failed: {str(e)}")
+    
+    def _extract_document_metadata(
+        self,
+        parsed_contents: List[ParsedContent]
+    ) -> Dict[str, Any]:
+        """
+        Extract summary metadata from parsed contents.
+        
+        Args:
+            parsed_contents: List of parsed content
+            
+        Returns:
+            Dictionary with metadata
+        """
+        if not parsed_contents:
+            return {
+                'page_count': 0,
+                'total_characters': 0,
+                'total_lines': 0
+            }
+        
+        # Calculate totals
+        page_count = len(parsed_contents)
+        total_characters = sum(len(p.content) for p in parsed_contents)
+        total_lines = sum(len(p.line_map) if p.line_map else 0 for p in parsed_contents)
+        
+        # Get parser used
+        parser = parsed_contents[0].metadata.get('parser', 'unknown')
+        
+        return {
+            'page_count': page_count,
+            'total_characters': total_characters,
+            'total_lines': total_lines,
+            'parser_used': parser,
+            'attachment_name': parsed_contents[0].attachment_name
+        }
     
     async def parse_batch(
         self,

@@ -6,6 +6,7 @@ Interfaces with GPT-4, Claude, or Azure OpenAI.
 import asyncio
 import aiohttp
 import json
+import os
 from typing import Optional, Dict, Any, List
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -142,10 +143,71 @@ Type: {field.field_type}
     
     async def _call_llm(self, request: LLMRequest) -> LLMResponse:
         """
-        Call the LLM API.
+        Call the LLM API (OpenAI GPT).
         
-        THIS IS A MOCK IMPLEMENTATION - Replace with actual API calls.
+        Args:
+            request: LLM request with prompts
+            
+        Returns:
+            LLM response
         """
+        try:
+            import openai
+            
+            # Set API key from environment
+            api_key = os.getenv('OPENAI_API_KEY') or self.config.api_key
+            if not api_key:
+                raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable")
+            
+            # Initialize client
+            client = openai.AsyncOpenAI(api_key=api_key)
+            
+            # Prepare messages
+            messages = [
+                {"role": "system", "content": request.system_prompt},
+                {"role": "user", "content": request.user_prompt}
+            ]
+            
+            # Call API
+            logger.debug(f"Calling OpenAI API with model: {self.config.model}")
+            
+            response = await client.chat.completions.create(
+                model=self.config.model,
+                messages=messages,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                response_format={"type": "json_object"} if request.response_format == "json" else None
+            )
+            
+            # Extract response
+            content = response.choices[0].message.content
+            finish_reason = response.choices[0].finish_reason
+            tokens_used = response.usage.total_tokens
+            
+            logger.debug(f"OpenAI response received: {tokens_used} tokens, finish_reason: {finish_reason}")
+            
+            return LLMResponse(
+                content=content,
+                model=response.model,
+                tokens_used=tokens_used,
+                finish_reason=finish_reason
+            )
+            
+        except ImportError:
+            logger.error("OpenAI library not installed. Install with: pip install openai")
+            # Fallback to mock for development
+            return await self._mock_llm_call(request)
+        except Exception as e:
+            logger.error(f"OpenAI API call failed: {e}")
+            raise
+    
+    async def _mock_llm_call(self, request: LLMRequest) -> LLMResponse:
+        """
+        Mock LLM call for development/testing.
+        
+        This is a fallback when OpenAI is not available.
+        """
+        logger.warning("Using mock LLM response (OpenAI not available)")
         
         # Simulate API call
         await asyncio.sleep(0.2)
